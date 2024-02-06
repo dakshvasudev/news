@@ -47,7 +47,10 @@ class _NewsAppState extends State<NewsApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('News App - For Flutter Devs'),
+        title: const Text(
+          'News App - For Flutter Devs',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
