@@ -12,6 +12,7 @@ class _NewsAppState extends State<NewsApp> {
   List<Article?> newsPosts = [];
   List<Article?> filteredNewsPosts = [];
   TextEditingController searchController = TextEditingController();
+  bool _loading = false;
 
   void search(String query) {
     setState(() {
@@ -30,10 +31,14 @@ class _NewsAppState extends State<NewsApp> {
   }
 
   _getNews() async {
+    setState(() {
+      _loading = true;
+    });
     final newsResponse = await NewsResource().getNewsResponse('flutter');
     setState(() {
       newsPosts = newsResponse.articles ?? [];
       filteredNewsPosts = List.from(newsPosts);
+      _loading = false;
     });
   }
 
@@ -84,6 +89,13 @@ class _NewsAppState extends State<NewsApp> {
               ],
             ),
             const SizedBox(height: 24),
+            if (_loading)
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
             if (filteredNewsPosts.isNotEmpty)
               Expanded(
                 child: ListView.builder(
@@ -122,7 +134,7 @@ class _NewsAppState extends State<NewsApp> {
                   },
                 ),
               ),
-            if (filteredNewsPosts.isEmpty)
+            if (filteredNewsPosts.isEmpty && !_loading)
               SizedBox(
                 height: MediaQuery.of(context).size.height * 0.6,
                 child: const Center(
@@ -158,16 +170,18 @@ class Card extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Container(
+        width: MediaQuery.of(context).size.width - 32,
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.transparent),
-            color: Colors.white,
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.grey,
-                blurRadius: 6.0,
-              ),
-            ]),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.transparent),
+          color: Colors.white,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.grey,
+              blurRadius: 6.0,
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
