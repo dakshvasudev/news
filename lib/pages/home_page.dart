@@ -10,22 +10,30 @@ class NewsApp extends StatefulWidget {
 
 class _NewsAppState extends State<NewsApp> {
   List<Article?> newsPosts = [];
+  List<Article?> filteredNewsPosts = [];
+  TextEditingController searchController = TextEditingController();
 
-  List<String> searchResults = [];
-
-  // void search(String query) {
-  //   setState(() {
-  //     searchResults = newsPosts
-  //         .where((post) => post.toLowerCase().contains(query.toLowerCase()))
-  //         .toList();
-  //   });
-  // }
+  void search(String query) {
+    setState(() {
+      if (query.isNotEmpty) {
+        filteredNewsPosts = newsPosts
+            .where((article) =>
+                article?.content?.toLowerCase().contains(query.toLowerCase()) ==
+                    true ||
+                article?.title?.toLowerCase().contains(query.toLowerCase()) ==
+                    true)
+            .toList();
+      } else {
+        filteredNewsPosts = List.from(newsPosts);
+      }
+    });
+  }
 
   _getNews() async {
-    final newsResource = NewsResource();
-    final newsResponse = await newsResource.getNewsResponse('flutter');
+    final newsResponse = await NewsResource().getNewsResponse('flutter');
     setState(() {
       newsPosts = newsResponse.articles ?? [];
+      filteredNewsPosts = List.from(newsPosts);
     });
   }
 
@@ -37,60 +45,93 @@ class _NewsAppState extends State<NewsApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('News App - For Flutter Devs'),
-        ),
-        body: Column(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('News App - For Flutter Devs'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: TextField(
-                // onChanged: (query) => search(query),
-                decoration: InputDecoration(
-                  labelText: 'Search',
-                  hintText: 'Enter keywords...',
-                  prefixIcon: Icon(Icons.search),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: (query) => search(query),
+                    decoration: const InputDecoration(
+                      labelText: 'Search',
+                      hintText: 'Enter keywords...',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(
+                  width: 8,
+                ),
+                IconButton(
+                  onPressed: () {
+                    searchController.clear();
+                  },
+                  icon: const Icon(
+                    Icons.clear,
+                    size: 24,
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: newsPosts!.length,
-                padding: const EdgeInsets.all(16.0),
-                itemBuilder: (context, index) {
-                  final article = newsPosts[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NewsDetailScreen(
+            const SizedBox(height: 24),
+            if (filteredNewsPosts.isNotEmpty)
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: filteredNewsPosts.length,
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context, index) {
+                    final article = filteredNewsPosts[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NewsDetailScreen(
+                              networkImage: article?.urlToImage,
+                              heading: article?.title,
+                              content: article?.content,
+                              description: article?.description,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Card(
                             networkImage: article?.urlToImage,
                             heading: article?.title,
-                            content: article?.content,
-                            description: article?.description,
+                            content: article?.description,
                           ),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        Card(
-                          networkImage: article?.urlToImage,
-                          heading: article?.title,
-                          content: article?.description,
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        )
-                      ],
-                    ),
-                  );
-                },
+                          const SizedBox(
+                            height: 5,
+                          )
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
+            if (filteredNewsPosts.isEmpty)
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: const Center(
+                  child: Text(
+                    'No news found! Try searching with different keywords.',
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
